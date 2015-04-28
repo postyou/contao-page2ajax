@@ -1,0 +1,43 @@
+{
+    "name": "postyou/page2ajax",
+    "description": "",
+    "keywords": [
+        "contao",
+        "ajax",
+        "2page",
+        "lightbox",
+        "venobox"
+    ],
+    "type": "contao-module",
+    "license": "LGPL-3.0+",
+    "authors": [
+        {
+            "name": "garyee",
+            "role": "Developer"
+        },
+        {
+            "name":"postyou",
+            "homepage":"http://postyou.de"
+        }
+    ],
+    "support": {
+        "email": "kontakt@postyou.de",
+        "issues": "https://github.com/garyee/contao-page2ajax/issues?direction=desc&sort=created&state=open",
+        "irc": "irc://irc.freenode.org/contao.dev",
+        "source": "https://github.com/garyee/contao-page2ajax"
+    },
+    "require": {
+        "php": ">=5.3.2",
+        "contao/core": ">=3.2,<4.0",
+        "contao-community-alliance/composer-plugin": "~2.0"
+
+    },
+    "extra": {
+        "contao": {
+            "sources": {
+                "": "system/modules/page2ajax"
+            }
+        }
+    }
+
+}
