@@ -40,7 +40,7 @@ session_write_close();
 if(strpos(dirname(__DIR__),"system")!==false)
     require(dirname(dirname(dirname(__DIR__))) . '/initialize.php');
 elseif(strpos(dirname(__DIR__),"composer")!==false)
-    require(dirname(dirname(dirname(dirname(dirname(__DIR__))))).'system/initialize.php');
+    require(dirname(dirname(dirname(dirname(dirname(__DIR__))))).'/system/initialize.php');
 
 
 // Preserve $_POST data in Contao <= 2.9
