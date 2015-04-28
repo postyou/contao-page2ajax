@@ -130,8 +130,8 @@ class PageAjax extends PageRegular
 			$GLOBALS['TL_LANGUAGE'] = \Input::get('language');
 		}
 
-		unset($GLOBALS['TL_HOOKS']['outputFrontendTemplate']);
-		unset($GLOBALS['TL_HOOKS']['parseFrontendTemplate']);
+		//unset($GLOBALS['TL_HOOKS']['outputFrontendTemplate']);
+		//unset($GLOBALS['TL_HOOKS']['parseFrontendTemplate']);
 
 		$this->loadLanguageFile('default');
 
