@@ -24,6 +24,9 @@
  * @copyright  Andreas Schempp 2009-2012
  * @author     Andreas Schempp <andreas@schempp.ch>
  * @license    http://opensource.org/licenses/lgpl-3.0.html
+ * 
+ * 
+ * Changed by garyee
  */
 
 
@@ -34,19 +37,19 @@
 class PageAjax extends PageRegular
 {
 
-	/**
-	 * Initialize the object
-	 */
-	public function __construct()
-	{
-		// Load user object before calling the parent constructor
-		$this->import('FrontendUser', 'User');
-		parent::__construct();
+    /**
+     * Initialize the object
+     */
+    public function __construct()
+    {
+        // Load user object before calling the parent constructor
+        $this->import('FrontendUser', 'User');
+        parent::__construct();
 
-		// Check whether a user is logged in
-		define('BE_USER_LOGGED_IN', $this->getLoginStatus('BE_USER_AUTH'));
-		define('FE_USER_LOGGED_IN', $this->getLoginStatus('FE_USER_AUTH'));
-	}
+        // Check whether a user is logged in
+        define('BE_USER_LOGGED_IN', $this->getLoginStatus('BE_USER_AUTH'));
+        define('FE_USER_LOGGED_IN', $this->getLoginStatus('FE_USER_AUTH'));
+    }
 
     public static function init(){
 
@@ -54,91 +57,106 @@ class PageAjax extends PageRegular
 
 
 
-	/**
-	 * Run the controller
-	 */
-	public function run()
-	{
-		$intPage = (int) \Input::get('pageId');
+    /**
+     * Run the controller
+     */
+    public function run()
+    {
+        global $objPage;
 
-		if (!$intPage)
-		{
-			$intPage = (int) \Input::get('page');
-		}
+        $intPage = (int) \Input::get('pageId');
 
-		if ($intPage > 0)
-		{
-			// Get the current page object
-			global $objPage;
-			$objPage = $this->getPageDetails($intPage);
+        if (!$intPage && isset($_POST['page']))
+        {
+            $intPage = (int) \Input::post('page');
+        }elseif(!$intPage && isset($_POST['language'])){
+            if (\Config::get('addLanguageToUrl') && !empty($_POST['language']))
+                $language= \Input::post('language');
+            else
+                $language = \Environment::get('httpAcceptLanguage');
+            $intPage = \PageModel::findFirstPublishedRootByHostAndLanguage(\Environment::get('host'), $language)->id;
+        }elseif(!$intPage ){
+            $intPage = \Contao\PageModel::findBy(array("type=? AND language!=''"),"root",array("order"=>"id ASC","limit"=>"1"))->id;
+        }
 
-			if (version_compare(VERSION, '2.9', '>'))
-			{
-				// Define the static URL constants
-				define('TL_FILES_URL', ($objPage->staticFiles != '' && !$GLOBALS['TL_CONFIG']['debugMode']) ? $objPage->staticFiles . TL_PATH . '/' : '');
-				define('TL_SCRIPT_URL', ($objPage->staticSystem != '' && !$GLOBALS['TL_CONFIG']['debugMode']) ? $objPage->staticSystem . TL_PATH . '/' : '');
-				define('TL_PLUGINS_URL', ($objPage->staticPlugins != '' && !$GLOBALS['TL_CONFIG']['debugMode']) ? $objPage->staticPlugins . TL_PATH . '/' : '');
+        // Define the stat
+        if ($intPage > 0)
+        {
+            $objPage = \Contao\PageModel::findWithDetails($intPage);
 
-
-				// Get the page layout
-				$objLayout = $this->getPageLayout(version_compare(VERSION, '3.0', '>=') ? $objPage : $objPage->layout);
-				$objPage->template = strlen($objLayout->template) ? $objLayout->template : 'fe_page';
-				$objPage->templateGroup = $objLayout->templates;
-
-				// Store the output format
-				list($strFormat, $strVariant) = explode('_', $objLayout->doctype);
-				$objPage->outputFormat = $strFormat;
-				$objPage->outputVariant = $strVariant;
-			}
-
-			if (version_compare(VERSION, '2.11', '>='))
-			{
-				// Use the global date format if none is set
-				if ($objPage->dateFormat == '')
-				{
-					$objPage->dateFormat = $GLOBALS['TL_CONFIG']['dateFormat'];
-				}
-				if ($objPage->timeFormat == '')
-				{
-					$objPage->timeFormat = $GLOBALS['TL_CONFIG']['timeFormat'];
-				}
-				if ($objPage->datimFormat == '')
-				{
-					$objPage->datimFormat = $GLOBALS['TL_CONFIG']['datimFormat'];
-				}
-
-				// Set the admin e-mail address
-				if ($objPage->adminEmail != '')
-				{
-					list($GLOBALS['TL_ADMIN_NAME'], $GLOBALS['TL_ADMIN_EMAIL']) = $this->splitFriendlyName($objPage->adminEmail);
-				}
-				else
-				{
-					list($GLOBALS['TL_ADMIN_NAME'], $GLOBALS['TL_ADMIN_EMAIL']) = $this->splitFriendlyName($GLOBALS['TL_CONFIG']['adminEmail']);
-				}
-			}
-
-			$GLOBALS['TL_LANGUAGE'] = $objPage->language;
-		}
-
-		$this->User->authenticate();
+            if (version_compare(VERSION, '2.9', '>'))
+            {
+                //static URL constants
+                define('TL_FILES_URL', ($objPage->staticFiles != '' && !$GLOBALS['TL_CONFIG']['debugMode']) ? $objPage->staticFiles . TL_PATH . '/' : '');
+                define('TL_SCRIPT_URL', ($objPage->staticSystem != '' && !$GLOBALS['TL_CONFIG']['debugMode']) ? $objPage->staticSystem . TL_PATH . '/' : '');
+                define('TL_PLUGINS_URL', ($objPage->staticPlugins != '' && !$GLOBALS['TL_CONFIG']['debugMode']) ? $objPage->staticPlugins . TL_PATH . '/' : '');
 
 
-		// Set language from _GET
-		if (strlen(\Input::get('language')))
-		{
-			$GLOBALS['TL_LANGUAGE'] = \Input::get('language');
-		}
+                // Get the page layout
+                $objLayout = $this->getPageLayout(version_compare(VERSION, '3.0', '>=') ? $objPage : $objPage->layout);
+                $objPage->template = strlen($objLayout->template) ? $objLayout->template : 'fe_page';
+                $objPage->templateGroup = $objLayout->templates;
 
-		//unset($GLOBALS['TL_HOOKS']['outputFrontendTemplate']);
-		//unset($GLOBALS['TL_HOOKS']['parseFrontendTemplate']);
+                // Store the output format
+                list($strFormat, $strVariant) = explode('_', $objLayout->doctype);
+                $objPage->outputFormat = $strFormat;
+                $objPage->outputVariant = $strVariant;
+            }
 
-		$this->loadLanguageFile('default');
+            if (version_compare(VERSION, '2.11', '>='))
+            {
+                // Use the global date format if none is set
+                if ($objPage->dateFormat == '')
+                {
+                    $objPage->dateFormat = $GLOBALS['TL_CONFIG']['dateFormat'];
+                }
+                if ($objPage->timeFormat == '')
+                {
+                    $objPage->timeFormat = $GLOBALS['TL_CONFIG']['timeFormat'];
+                }
+                if ($objPage->datimFormat == '')
+                {
+                    $objPage->datimFormat = $GLOBALS['TL_CONFIG']['datimFormat'];
+                }
+
+                // Set the admin e-mail address
+                if ($objPage->adminEmail != '')
+                {
+                    list($GLOBALS['TL_ADMIN_NAME'], $GLOBALS['TL_ADMIN_EMAIL']) = $this->splitFriendlyName($objPage->adminEmail);
+                }
+                else
+                {
+                    list($GLOBALS['TL_ADMIN_NAME'], $GLOBALS['TL_ADMIN_EMAIL']) = $this->splitFriendlyName($GLOBALS['TL_CONFIG']['adminEmail']);
+                }
+            }
+
+            $GLOBALS['TL_LANGUAGE'] = $objPage->language;
+        }
+        if(!isset($objPage) || $objPage->language==""){
+            echo("Pagefault ! please set the pageId Parameter to a page or a page with a language!");
+            header('HTTP/1.1 412 Precondition Failed');
+            die('Invalid AJAX call.');
+        }
+
+        $this->User->authenticate();
+
+
+        // Set language from _GET
+        if (strlen(\Input::get('language')))
+        {
+            $GLOBALS['TL_LANGUAGE'] = \Input::get('language');
+        }
+
+        //unset($GLOBALS['TL_HOOKS']['outputFrontendTemplate']);
+        //unset($GLOBALS['TL_HOOKS']['parseFrontendTemplate']);
+
+        $this->loadLanguageFile('default');
 
         if(!isset($_GET['id'])){
             header('HTTP/1.1 412 Precondition Failed');
             return 'Missing ID';
         }
+
         if(!isset($_GET['action'])){
             header('HTTP/1.1 412 Precondition Failed');
             return 'Missing Action-Parameter';
@@ -164,23 +182,23 @@ class PageAjax extends PageRegular
             }
         }
 
-		if (is_array($GLOBALS['TL_HOOKS']['dispatchAjax']))
-		{
-			foreach ($GLOBALS['TL_HOOKS']['dispatchAjax'] as $callback)
-			{
-				$this->import($callback[0]);
-				$varValue = $this->$callback[0]->$callback[1]();
+        if (is_array($GLOBALS['TL_HOOKS']['dispatchAjax']))
+        {
+            foreach ($GLOBALS['TL_HOOKS']['dispatchAjax'] as $callback)
+            {
+                $this->import($callback[0]);
+                $varValue = $this->$callback[0]->$callback[1]();
 
-				if ($varValue !== false)
-				{
-					$this->output($varValue);
-				}
-			}
-		}
+                if ($varValue !== false)
+                {
+                    $this->output($varValue);
+                }
+            }
+        }
 
-		header('HTTP/1.1 412 Precondition Failed');
-		die('Invalid AJAX call.');
-	}
+        header('HTTP/1.1 412 Precondition Failed');
+        die('Invalid AJAX call.');
+    }
 
     /**
      * Generate a Page and return it as HTML string
@@ -431,6 +449,7 @@ class PageAjax extends PageRegular
      */
     protected function getAjaxArticle($intId)
     {
+        global $objPage;
 
         if (!strlen($intId) || $intId < 1)
         {
@@ -474,11 +493,8 @@ class PageAjax extends PageRegular
 
         if (\Input::get('g') == '1')
         {
-//            \Input::setGet("articles",$intId);
-//            $strBuffer=$this->getFrontendModule(0,"main");
-
+            $objPage->id=null;
             $strBuffer=parent::getArticle($intId);
-
             return $strBuffer;
         }
         else
@@ -529,199 +545,199 @@ class PageAjax extends PageRegular
 
 
 
-	/**
-	 * Generate a front end module and return it as HTML string
-	 * @param integer
-	 * @param string
-	 * @return string
-	 */
-	protected function getAjaxFrontendModule($intId, $strColumn='main')
-	{
-		if (!strlen($intId) || $intId < 1)
-		{
-			header('HTTP/1.1 412 Precondition Failed');
-			return 'Missing frontend module ID';
-		}
+    /**
+     * Generate a front end module and return it as HTML string
+     * @param integer
+     * @param string
+     * @return string
+     */
+    protected function getAjaxFrontendModule($intId, $strColumn='main')
+    {
+        if (!strlen($intId) || $intId < 1)
+        {
+            header('HTTP/1.1 412 Precondition Failed');
+            return 'Missing frontend module ID';
+        }
 
-		$objModule = $this->Database->prepare("SELECT * FROM tl_module WHERE id=?")
-									->limit(1)
-									->execute($intId);
+        $objModule = $this->Database->prepare("SELECT * FROM tl_module WHERE id=?")
+            ->limit(1)
+            ->execute($intId);
 
-		if ($objModule->numRows < 1)
-		{
-			header('HTTP/1.1 404 Not Found');
-			return 'Frontend module not found';
-		}
+        if ($objModule->numRows < 1)
+        {
+            header('HTTP/1.1 404 Not Found');
+            return 'Frontend module not found';
+        }
 
-		// Show to guests only
-		if ($objModule->guests && FE_USER_LOGGED_IN && !BE_USER_LOGGED_IN && !$objModule->protected)
-		{
-			header('HTTP/1.1 403 Forbidden');
-			return 'Forbidden';
-		}
+        // Show to guests only
+        if ($objModule->guests && FE_USER_LOGGED_IN && !BE_USER_LOGGED_IN && !$objModule->protected)
+        {
+            header('HTTP/1.1 403 Forbidden');
+            return 'Forbidden';
+        }
 
-		// Protected element
-		if (!BE_USER_LOGGED_IN && $objModule->protected)
-		{
-			if (!FE_USER_LOGGED_IN)
-			{
-				header('HTTP/1.1 403 Forbidden');
-				return 'Forbidden';
-			}
+        // Protected element
+        if (!BE_USER_LOGGED_IN && $objModule->protected)
+        {
+            if (!FE_USER_LOGGED_IN)
+            {
+                header('HTTP/1.1 403 Forbidden');
+                return 'Forbidden';
+            }
 
-			$this->import('FrontendUser', 'User');
-			$groups = deserialize($objModule->groups);
+            $this->import('FrontendUser', 'User');
+            $groups = deserialize($objModule->groups);
 
-			if (!is_array($groups) || count($groups) < 1 || count(array_intersect($groups, $this->User->groups)) < 1)
-			{
-				header('HTTP/1.1 403 Forbidden');
-				return 'Forbidden';
-			}
-		}
+            if (!is_array($groups) || count($groups) < 1 || count(array_intersect($groups, $this->User->groups)) < 1)
+            {
+                header('HTTP/1.1 403 Forbidden');
+                return 'Forbidden';
+            }
+        }
 
-		$strClass = \Module::findClass($objModule->type);
+        $strClass = \Module::findClass($objModule->type);
 
-		// Return if the class does not exist
-		if (!class_exists($strClass))
-		{
-			$this->log('Module class "'.$GLOBALS['FE_MOD'][$objModule->type].'" (module "'.$objModule->type.'") does not exist', 'Ajax getFrontendModule()', TL_ERROR);
+        // Return if the class does not exist
+        if (!class_exists($strClass))
+        {
+            $this->log('Module class "'.$GLOBALS['FE_MOD'][$objModule->type].'" (module "'.$objModule->type.'") does not exist', 'Ajax getFrontendModule()', TL_ERROR);
 
-			header('HTTP/1.1 404 Not Found');
-			return 'Frontend module class does not exist';
-		}
+            header('HTTP/1.1 404 Not Found');
+            return 'Frontend module class does not exist';
+        }
 
-		$objModule->typePrefix = 'mod_';
-		$objModule = new $strClass($objModule, $strColumn);
+        $objModule->typePrefix = 'mod_';
+        $objModule = new $strClass($objModule, $strColumn);
 
-		return \Input::get('g') == '1' ? $objModule->generate() : $objModule->generateAjax();
-	}
-
-
-	/**
-	 * Generate a content element return it as HTML string
-	 * @param integer
-	 * @return string
-	 */
-	protected function getElement($intId)
-	{
-		if (!strlen($intId) || $intId < 1)
-		{
-			header('HTTP/1.1 412 Precondition Failed');
-			return 'Missing content element ID';
-		}
-
-		$objElement = $this->Database->prepare("SELECT * FROM tl_content WHERE id=?")
-									 ->limit(1)
-									 ->execute($intId);
-
-		if ($objElement->numRows < 1)
-		{
-			header('HTTP/1.1 404 Not Found');
-			return 'Content element not found';
-		}
-
-		// Show to guests only
-		if ($objElement->guests && FE_USER_LOGGED_IN && !BE_USER_LOGGED_IN && !$objElement->protected)
-		{
-			header('HTTP/1.1 403 Forbidden');
-			return 'Forbidden';
-		}
-
-		// Protected element
-		if ($objElement->protected && !BE_USER_LOGGED_IN)
-		{
-			if (!FE_USER_LOGGED_IN)
-			{
-				header('HTTP/1.1 403 Forbidden');
-				return 'Forbidden';
-			}
-
-			$this->import('FrontendUser', 'User');
-			$groups = deserialize($objElement->groups);
-
-			if (!is_array($groups) || count($groups) < 1 || count(array_intersect($groups, $this->User->groups)) < 1)
-			{
-				header('HTTP/1.1 403 Forbidden');
-				return 'Forbidden';
-			}
-		}
-
-		$strClass = \Module::findClass($objElement->type);
-
-		// Return if the class does not exist
-		if (!class_exists($strClass))
-		{
-			$this->log('Content element class "'.$strClass.'" (content element "'.$objElement->type.'") does not exist', 'Ajax getContentElement()', TL_ERROR);
-
-			header('HTTP/1.1 404 Not Found');
-			return 'Content element class does not exist';
-		}
-
-		$objElement->typePrefix = 'ce_';
-		$objElement = new $strClass($objElement);
-
-		if (\Input::get('g') == '1')
-		{
-			$strBuffer = $objElement->generate();
-
-			// HOOK: add custom logic
-			if (isset($GLOBALS['TL_HOOKS']['getContentElement']) && is_array($GLOBALS['TL_HOOKS']['getContentElement']))
-			{
-				foreach ($GLOBALS['TL_HOOKS']['getContentElement'] as $callback)
-				{
-					$this->import($callback[0]);
-					$strBuffer = $this->$callback[0]->$callback[1]($objElement, $strBuffer);
-				}
-			}
-
-			return $strBuffer;
-		}
-		else
-		{
-			return $objElement->generateAjax();
-		}
-	}
+        return \Input::get('g') == '1' ? $objModule->generate() : $objModule->generateAjax();
+    }
 
 
-	/**
-	 * Generate a form field
-	 * @param  int
-	 * @return string
-	 */
-	protected function getFormField($strId)
-	{
-		if (!strlen($strId) || !isset($_SESSION['AJAX-FFL'][$strId]))
-		{
-			header('HTTP/1.1 412 Precondition Failed');
-			return 'Missing form field ID';
-		}
+    /**
+     * Generate a content element return it as HTML string
+     * @param integer
+     * @return string
+     */
+    protected function getElement($intId)
+    {
+        if (!strlen($intId) || $intId < 1)
+        {
+            header('HTTP/1.1 412 Precondition Failed');
+            return 'Missing content element ID';
+        }
 
-		$arrConfig = $_SESSION['AJAX-FFL'][$strId];
+        $objElement = $this->Database->prepare("SELECT * FROM tl_content WHERE id=?")
+            ->limit(1)
+            ->execute($intId);
 
-		$strClass = strlen($GLOBALS['TL_FFL'][$arrConfig['type']]) ? $GLOBALS['TL_FFL'][$arrConfig['type']] : $GLOBALS['BE_FFL'][$arrConfig['type']];
+        if ($objElement->numRows < 1)
+        {
+            header('HTTP/1.1 404 Not Found');
+            return 'Content element not found';
+        }
 
-		if (!class_exists($strClass))
-		{
-			$this->log('Form field class "'.$strClass.'" (form field "'.$arrConfig['type'].'") does not exist', 'Ajax getFormField()', TL_ERROR);
+        // Show to guests only
+        if ($objElement->guests && FE_USER_LOGGED_IN && !BE_USER_LOGGED_IN && !$objElement->protected)
+        {
+            header('HTTP/1.1 403 Forbidden');
+            return 'Forbidden';
+        }
 
-			header('HTTP/1.1 404 Not Found');
-			return 'Form field class does not exist';
-		}
+        // Protected element
+        if ($objElement->protected && !BE_USER_LOGGED_IN)
+        {
+            if (!FE_USER_LOGGED_IN)
+            {
+                header('HTTP/1.1 403 Forbidden');
+                return 'Forbidden';
+            }
 
-		$objField = new $strClass($arrConfig);
+            $this->import('FrontendUser', 'User');
+            $groups = deserialize($objElement->groups);
 
-		return $objField->generateAjax();
-	}
+            if (!is_array($groups) || count($groups) < 1 || count(array_intersect($groups, $this->User->groups)) < 1)
+            {
+                header('HTTP/1.1 403 Forbidden');
+                return 'Forbidden';
+            }
+        }
+
+        $strClass = \Module::findClass($objElement->type);
+
+        // Return if the class does not exist
+        if (!class_exists($strClass))
+        {
+            $this->log('Content element class "'.$strClass.'" (content element "'.$objElement->type.'") does not exist', 'Ajax getContentElement()', TL_ERROR);
+
+            header('HTTP/1.1 404 Not Found');
+            return 'Content element class does not exist';
+        }
+
+        $objElement->typePrefix = 'ce_';
+        $objElement = new $strClass($objElement);
+
+        if (\Input::get('g') == '1')
+        {
+            $strBuffer = $objElement->generate();
+
+            // HOOK: add custom logic
+            if (isset($GLOBALS['TL_HOOKS']['getContentElement']) && is_array($GLOBALS['TL_HOOKS']['getContentElement']))
+            {
+                foreach ($GLOBALS['TL_HOOKS']['getContentElement'] as $callback)
+                {
+                    $this->import($callback[0]);
+                    $strBuffer = $this->$callback[0]->$callback[1]($objElement, $strBuffer);
+                }
+            }
+
+            return $strBuffer;
+        }
+        else
+        {
+            return $objElement->generateAjax();
+        }
+    }
 
 
-	/**
-	 * Output data, encode to json and replace insert tags
-	 * @param  mixed
-	 * @return string
-	 */
-	protected function output($varValue)
-	{
-		$varValue = $this->replaceTags($varValue);
+    /**
+     * Generate a form field
+     * @param  int
+     * @return string
+     */
+    protected function getFormField($strId)
+    {
+        if (!strlen($strId) || !isset($_SESSION['AJAX-FFL'][$strId]))
+        {
+            header('HTTP/1.1 412 Precondition Failed');
+            return 'Missing form field ID';
+        }
+
+        $arrConfig = $_SESSION['AJAX-FFL'][$strId];
+
+        $strClass = strlen($GLOBALS['TL_FFL'][$arrConfig['type']]) ? $GLOBALS['TL_FFL'][$arrConfig['type']] : $GLOBALS['BE_FFL'][$arrConfig['type']];
+
+        if (!class_exists($strClass))
+        {
+            $this->log('Form field class "'.$strClass.'" (form field "'.$arrConfig['type'].'") does not exist', 'Ajax getFormField()', TL_ERROR);
+
+            header('HTTP/1.1 404 Not Found');
+            return 'Form field class does not exist';
+        }
+
+        $objField = new $strClass($arrConfig);
+
+        return $objField->generateAjax();
+    }
+
+
+    /**
+     * Output data, encode to json and replace insert tags
+     * @param  mixed
+     * @return string
+     */
+    protected function output($varValue)
+    {
+        $varValue = $this->replaceTags($varValue);
 
 //		if (version_compare(VERSION, '2.9', '>'))
 //		{
@@ -736,34 +752,34 @@ class PageAjax extends PageRegular
 //			$varValue = json_encode($varValue);
 //		}
 
-		echo $varValue;
-		exit;
-	}
+        echo $varValue;
+        exit;
+    }
 
 
-	/**
-	 * Recursively replace inserttags in the return value
-	 * @param	array|string
-	 * @return	array|string
-	 */
-	private function replaceTags($varValue)
-	{
-		if (is_array($varValue))
-		{
-			foreach( $varValue as $k => $v )
-			{
-				$varValue[$k] = $this->replaceTags($v);
-			}
+    /**
+     * Recursively replace inserttags in the return value
+     * @param	array|string
+     * @return	array|string
+     */
+    private function replaceTags($varValue)
+    {
+        if (is_array($varValue))
+        {
+            foreach( $varValue as $k => $v )
+            {
+                $varValue[$k] = $this->replaceTags($v);
+            }
 
-			return $varValue;
-		}
-		elseif (is_object($varValue))
-		{
-			return $varValue;
-		}
+            return $varValue;
+        }
+        elseif (is_object($varValue))
+        {
+            return $varValue;
+        }
 
-		return $this->replaceInsertTags($varValue);
-	}
+        return $this->replaceInsertTags($varValue);
+    }
 
     public static function getAjaxURL(){
         if(defined('TL_ROOT')){
@@ -772,6 +788,6 @@ class PageAjax extends PageRegular
         elseif(strpos(__DIR__,"composer")!=false)
             return "/composer/vendor/postyou/page2ajax/assets/ajax.php";
         else
-        return "/system/modules/page2ajax/assets/ajax.php";
+            return "/system/modules/page2ajax/assets/ajax.php";
     }
 }
