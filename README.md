@@ -50,7 +50,7 @@ install:
         {
         
             "type": "vcs",
-            "url": "https://github.com/garyee/contao-page2ajax"
+            "url": "https://github.com/postyou/contao-page2ajax"
         }
 ],
    

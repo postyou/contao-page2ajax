@@ -26,7 +26,7 @@
  * @license    http://opensource.org/licenses/lgpl-3.0.html
  * 
  * 
- * Changed by garyee
+ * Changed by Gerald Meier for Postyou 2015
  */
 
 

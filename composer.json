@@ -1,6 +1,6 @@
 {
     "name": "postyou/page2ajax",
-    "description": "",
+    "description": "Call content elements, pages an other entities via ajax by id",
     "keywords": [
         "contao",
         "ajax",
@@ -12,7 +12,7 @@
     "license": "LGPL-3.0+",
     "authors": [
         {
-            "name": "garyee",
+            "name": "Gerald Meier",
             "role": "Developer"
         },
         {
@@ -22,9 +22,8 @@
     ],
     "support": {
         "email": "kontakt@postyou.de",
-        "issues": "https://github.com/garyee/contao-page2ajax/issues?direction=desc&sort=created&state=open",
-        "irc": "irc://irc.freenode.org/contao.dev",
-        "source": "https://github.com/garyee/contao-page2ajax"
+        "issues": "https://github.com/postyou/contao-page2ajax/issues?direction=desc&sort=created&state=open",
+        "source": "https://github.com/postyou/contao-page2ajax"
     },
     "require": {
         "php": ">=5.3.2",
