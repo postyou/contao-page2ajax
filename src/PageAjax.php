@@ -37,6 +37,8 @@
 class PageAjax extends PageRegular
 {
 
+    private static $scriptTags=array('[[TL_JQUERY]]','[[TL_CSS]]','[[TL_MOOTOOLS]]','[[TL_BODY]]','[[TL_HEAD]]');
+
     /**
      * Initialize the object
      */
@@ -66,12 +68,12 @@ class PageAjax extends PageRegular
 
         $intPage = (int) \Input::get('pageId');
 
-        if (!$intPage && isset($_POST['page']))
+        if (!$intPage && isset($_GET['page']))
         {
-            $intPage = (int) \Input::post('page');
-        }elseif(!$intPage && isset($_POST['language'])){
-            if (\Config::get('addLanguageToUrl') && !empty($_POST['language']))
-                $language= \Input::post('language');
+            $intPage = (int) \Input::get('page');
+        }elseif(!$intPage && isset($_GET['language'])){
+            if (\Config::get('addLanguageToUrl') && !empty($_GET['language']))
+                $language= \Input::get('language');
             else
                 $language = \Environment::get('httpAcceptLanguage');
             $intPage = \PageModel::findFirstPublishedRootByHostAndLanguage(\Environment::get('host'), $language)->id;
@@ -255,7 +257,7 @@ class PageAjax extends PageRegular
         $this->setStaticUrls($newObjPageModel);
 
         $objHandler = new $GLOBALS['TL_PTY']['ajax']();
-        if(isset($_POST['lws']) && !empty($_POST['lws']))
+        if(isset($_GET['lws']) && !empty($_GET['lws']))
             $objHandler = new $GLOBALS['TL_PTY']['regular']();
 
         $objPage= $newObjPageModel;
@@ -495,6 +497,12 @@ class PageAjax extends PageRegular
         {
             $objPage->id=null;
             $strBuffer=parent::getArticle($intId);
+            if(isset($_GET['lws']) && !empty($_GET['lws'])){
+                $scriptTokens=implode(" ",self::$scriptTags);
+                $this->setStaticUrls($objPage);
+                $scriptBuffer=\Contao\Controller::replaceDynamicScriptTags($scriptTokens);
+                $strBuffer.=$scriptBuffer;
+            }
             return $strBuffer;
         }
         else
