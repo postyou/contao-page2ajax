@@ -26,7 +26,7 @@
  * @license    http://opensource.org/licenses/lgpl-3.0.html
  * 
  * 
- * Changed by Gerald Meier for Postyou 2015
+ * Changed by Gerald Meier for Postyou 2016
  */
 
 
@@ -212,8 +212,6 @@ class PageAjax extends PageRegular
     {
         global $objPage;
 
-        $objPagebkp=$objPage;
-
         if (!strlen($intId) || $intId < 1)
         {
             header('HTTP/1.1 412 Precondition Failed');
@@ -221,6 +219,12 @@ class PageAjax extends PageRegular
         }
 
         $newObjPageModel = \PageModel::findPublishedByIdOrAlias($intId);
+        if(isset($newObjPageModel) && ($newObjPageModel instanceof \Contao\Model\Collection || is_array($newObjPageModel)))
+            $newObjPageModel[0]->loadDetails();
+        elseif($newObjPageModel instanceof \Contao\PageModel){
+            $newObjPageModel->loadDetails();
+        }
+
         if (!isset($newObjPageModel))
         {
             header('HTTP/1.1 404 Not Found');
@@ -256,23 +260,25 @@ class PageAjax extends PageRegular
 
         $this->setStaticUrls($newObjPageModel);
 
-        $objHandler = new $GLOBALS['TL_PTY']['ajax']();
-        if(isset($_GET['lws']) && !empty($_GET['lws']))
-            $objHandler = new $GLOBALS['TL_PTY']['regular']();
-
-        $objPage= $newObjPageModel;
-
         $layout=$this->getPageLayout($newObjPageModel);
         $layout->head="";
 
-//        var_dump($newPageHtml);
+        $objHandler = new $GLOBALS['TL_PTY']['ajax']();
 
-        $newPageHtml= \Input::get('g') == '1' ? $objHandler->generate($newObjPageModel, false): $objHandler->generateAjax();
+        $objPage= $newObjPageModel;
 
-//        $objPage=$objPagebkp;
-//
-//
-//        return $newPageHtml;
+        if(\Input::get('g') == '1'){
+            $objHandler->generate($newObjPageModel, false);
+        } else {
+            if (is_array($GLOBALS['TL_HOOKS']['ajaxGenerate']))
+            {
+                foreach ($GLOBALS['TL_HOOKS']['ajaxGenerate'] as $callback)
+                {
+                    $this->import($callback[0]);
+                    $this->$callback[0]->$callback[1]($newObjPageModel);
+                }
+            }
+        }
 
     }
 
@@ -433,9 +439,10 @@ class PageAjax extends PageRegular
         $this->Template->onload = trim($objLayout->onload);
         $this->Template->class = trim($objLayout->cssClass . ' ' . $objPage->cssClass);
 
-        // Execute AFTER the modules have been generated and create footer scripts first
-//        $this->createFooterScripts($objLayout);
-//        $this->createHeaderScripts($objPage, $objLayout);
+        if(isset($_GET['lws']) && !empty($_GET['lws'])){
+            $this->createFooterScripts($objLayout);
+            $this->createHeaderScripts($objPage, $objLayout);
+        }
 
         // Print the template to the screen
         $this->Template->output($blnCheckRequest);
@@ -492,23 +499,30 @@ class PageAjax extends PageRegular
                 return 'Forbidden';
             }
         }
-
         if (\Input::get('g') == '1')
         {
             $objPage->id=null;
-            $strBuffer=parent::getArticle($intId);
+            $strBuffer=self::getArticle($intId);
             if(isset($_GET['lws']) && !empty($_GET['lws'])){
                 $scriptTokens=implode(" ",self::$scriptTags);
                 $this->setStaticUrls($objPage);
                 $scriptBuffer=\Contao\Controller::replaceDynamicScriptTags($scriptTokens);
                 $strBuffer.=$scriptBuffer;
             }
-            return $strBuffer;
         }
         else
         {
-            return $objArticle->generateAjax();
+            if (is_array($GLOBALS['TL_HOOKS']['ajaxGenerate']))
+            {
+                foreach ($GLOBALS['TL_HOOKS']['ajaxGenerate'] as $callback)
+                {
+                    $this->import($callback[0]);
+                    $strBuffer=$this->$callback[0]->$callback[1](\Contao\ArticleModel::findByIdOrAlias($intId));
+                }
+            }
         }
+        return $strBuffer;
+
 
     }
 
@@ -687,23 +701,30 @@ class PageAjax extends PageRegular
         if (\Input::get('g') == '1')
         {
             $strBuffer = $objElement->generate();
-
-            // HOOK: add custom logic
-            if (isset($GLOBALS['TL_HOOKS']['getContentElement']) && is_array($GLOBALS['TL_HOOKS']['getContentElement']))
-            {
-                foreach ($GLOBALS['TL_HOOKS']['getContentElement'] as $callback)
-                {
-                    $this->import($callback[0]);
-                    $strBuffer = $this->$callback[0]->$callback[1]($objElement, $strBuffer);
-                }
-            }
-
-            return $strBuffer;
         }
         else
         {
-            return $objElement->generateAjax();
+            if (is_array($GLOBALS['TL_HOOKS']['ajaxGenerate']))
+            {
+                foreach ($GLOBALS['TL_HOOKS']['ajaxGenerate'] as $callback)
+                {
+                    $this->import($callback[0]);
+                    $strBuffer=$this->$callback[0]->$callback[1]($objElement);
+                }
+            }
         }
+
+        // HOOK: add custom logic
+        if (isset($GLOBALS['TL_HOOKS']['getContentElement']) && is_array($GLOBALS['TL_HOOKS']['getContentElement']))
+        {
+            foreach ($GLOBALS['TL_HOOKS']['getContentElement'] as $callback)
+            {
+                $this->import($callback[0]);
+                $strBuffer = $this->$callback[0]->$callback[1]($objElement, $strBuffer);
+            }
+        }
+
+        return $strBuffer;
     }
 
 
