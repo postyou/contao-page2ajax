@@ -24,9 +24,9 @@
  * @copyright  Andreas Schempp 2009-2012
  * @author     Andreas Schempp <andreas@schempp.ch>
  * @license    http://opensource.org/licenses/lgpl-3.0.html
- * 
- * 
- * Changed by Gerald Meier for Postyou 2016
+ *
+ *
+ * Changed by Gerald Meier for Postyou 2015
  */
 
 
@@ -262,6 +262,7 @@ class PageAjax extends PageRegular
 
         $layout=$this->getPageLayout($newObjPageModel);
         $layout->head="";
+        $layout->template="fe_ajax_page";
 
         $objHandler = new $GLOBALS['TL_PTY']['ajax']();
 
@@ -440,8 +441,7 @@ class PageAjax extends PageRegular
         $this->Template->class = trim($objLayout->cssClass . ' ' . $objPage->cssClass);
 
         if(isset($_GET['lws']) && !empty($_GET['lws'])){
-            $this->createFooterScripts($objLayout);
-            $this->createHeaderScripts($objPage, $objLayout);
+            $this->Template->mootools=$this->generateScriptTags();
         }
 
         // Print the template to the screen
@@ -504,10 +504,7 @@ class PageAjax extends PageRegular
             $objPage->id=null;
             $strBuffer=self::getArticle($intId);
             if(isset($_GET['lws']) && !empty($_GET['lws'])){
-                $scriptTokens=implode(" ",self::$scriptTags);
-                $this->setStaticUrls($objPage);
-                $scriptBuffer=\Contao\Controller::replaceDynamicScriptTags($scriptTokens);
-                $strBuffer.=$scriptBuffer;
+                $strBuffer.=$this->generateScriptTags();
             }
         }
         else
@@ -524,6 +521,13 @@ class PageAjax extends PageRegular
         return $strBuffer;
 
 
+    }
+
+    public function generateScriptTags(){
+        $scriptTokens=implode(" ",self::$scriptTags);
+        $this->setStaticUrls();
+        $scriptBuffer=\Contao\Controller::replaceDynamicScriptTags($scriptTokens);
+        return $scriptBuffer;
     }
 
 
