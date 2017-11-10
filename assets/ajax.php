@@ -42,6 +42,9 @@ if(strpos(dirname(__DIR__),"system")!==false)
 elseif(strpos(dirname(__DIR__),"composer")!==false)
     require(dirname(dirname(dirname(dirname(dirname(__DIR__))))).'/system/initialize.php');
 
+if(!\Environment::get('isAjaxRequest')){
+    \Controller::redirect('/');
+}
 
 // Preserve $_POST data in Contao <= 2.9
 if (version_compare(VERSION, '2.10', '<'))
